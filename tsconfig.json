@@ -1,0 +1,10 @@
+{
+  "forceConsistentCasingInFileNames": true,
+  "noImplicitReturns": true,
+  "strict": true,
+  "noUnusedLocals": true,
+  "compilerOptions": {
+    "noImplicitAny": true,
+    "esModuleInterop": true,
+  }
+}

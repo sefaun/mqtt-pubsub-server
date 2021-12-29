@@ -1,0 +1,32 @@
+{
+  "name": "mqtt-broker",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "nodemon --watch './**' --ext 'ts,json' --exec \"esbuild ./index.ts --bundle --outfile=build/index.js --platform=node --sourcemap && node build/index.js | pino-pretty -c -t\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mqtt-tools/mqtt-broker.git"
+  },
+  "keywords": [
+    "mqtt",
+    "broker",
+    "iot"
+  ],
+  "contributors": [
+    "Erdem UN <erdemun.offical@gmail.com>",
+    "Sefa UN <sefaun6654@hotmail.com>"
+  ],
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/mqtt-tools/mqtt-broker/issues"
+  },
+  "homepage": "https://github.com/mqtt-tools/mqtt-broker#readme",
+  "devDependencies": {
+    "@types/node": "^17.0.5",
+    "esbuild": "^0.14.8",
+    "nodemon": "^2.0.15"
+  }
+}
