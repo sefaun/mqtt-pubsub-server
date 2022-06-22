@@ -2,9 +2,9 @@
   "name": "mqtt-broker",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "test.js",
   "scripts": {
-    "dev": "nodemon --watch './**' --ext 'ts,json' --exec \"esbuild ./index.ts --bundle --outfile=build/index.js --platform=node --sourcemap && node build/index.js | pino-pretty -c -t\""
+    "start": "nodemon --watch \"./**\"  --ext \"ts,json\" --exec \"ts-node index.ts\""
   },
   "repository": {
     "type": "git",
@@ -25,8 +25,11 @@
   },
   "homepage": "https://github.com/mqtt-tools/mqtt-broker#readme",
   "devDependencies": {
-    "@types/node": "^17.0.5",
+    "@types/node": "^17.0.45",
     "esbuild": "^0.14.8",
     "nodemon": "^2.0.15"
+  },
+  "dependencies": {
+    "mqtt": "^4.3.7"
   }
 }

@@ -1,10 +1,21 @@
 {
-  "forceConsistentCasingInFileNames": true,
-  "noImplicitReturns": true,
-  "strict": true,
-  "noUnusedLocals": true,
   "compilerOptions": {
-    "noImplicitAny": true,
+    "module": "CommonJS",
     "esModuleInterop": true,
-  }
+    "target": "es6",
+    "moduleResolution": "node",
+    "sourceMap": true,
+    "outDir": "build",
+    "resolveJsonModule": true,
+    "declaration": false
+  },
+  "exclude": [
+    "node_modules"
+  ],
+  "include": [
+    "**/*",
+  ],
+  "lib": [
+    "es2015"
+  ]
 }
