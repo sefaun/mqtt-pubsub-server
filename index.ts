@@ -1,4 +1,4 @@
-import net from "net"
+import net, { Socket } from "net"
 import { EventEmitter } from "events"
 
 import { command_names } from "./protocol/command_names"
@@ -41,7 +41,7 @@ class Client extends EventEmitter {
     return packet
   }
 
-  operations = (client: any, data: Buffer) => {
+  operations = (client: Socket, data: Buffer) => {
 
     const packet = this.calculatePaketLength(data)
     console.log(commands[data[0]])
@@ -51,7 +51,7 @@ class Client extends EventEmitter {
       case command_names.connect:
 
         if (data.slice(4, 8).toString() !== "MQTT") {
-          //return this.protocolError(client)
+          return this.protocolError(client)
         }
         //Send Connack Packet
         client.write(Buffer.from(responses.connack))
@@ -95,19 +95,20 @@ class Client extends EventEmitter {
         break
 
       default:
+        client.write("MQTT Protocol Error !\r\n")
         client.destroy()
         break;
     }
 
   }
 
-  serverHandler = (client: any) => {
+  serverHandler = (client: Socket) => {
 
     client.on("data", (data: Buffer) => {
       this.operations(client, data)
     })
 
-    client.on('error', (err: Error) => {
+    client.on('error', (_err: Error) => {
       this.removeAllListeners()
       //console.log(this.listenerCount("sefa"))
       //console.log("err !", err)
@@ -115,7 +116,7 @@ class Client extends EventEmitter {
 
   }
 
-  protocolError = (client: any) => {
+  protocolError = (client: Socket) => {
     client.write("MQTT Protocol Error !\r\n")
     return client.destroy()
   }

@@ -13,7 +13,8 @@
   "keywords": [
     "mqtt",
     "broker",
-    "iot"
+    "iot",
+    "Pub/Sub"
   ],
   "contributors": [
     "Erdem UN <erdemun.offical@gmail.com>",
@@ -26,10 +27,8 @@
   "homepage": "https://github.com/mqtt-tools/mqtt-broker#readme",
   "devDependencies": {
     "@types/node": "^17.0.45",
-    "esbuild": "^0.14.8",
-    "nodemon": "^2.0.15"
-  },
-  "dependencies": {
-    "mqtt": "^4.3.7"
+    "esbuild": "^0.14.47",
+    "mqtt": "^4.3.7",
+    "nodemon": "^2.0.16"
   }
 }
