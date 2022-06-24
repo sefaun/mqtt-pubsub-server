@@ -1,8 +1,8 @@
 import net, { Socket } from "net"
 import { EventEmitter } from "events"
+import mqtt_packet from "mqtt-packet"
 
 import { command_names } from "./protocol/command_names"
-import { commands } from "./protocol/commands"
 import { responses } from "./protocol/responses"
 
 
@@ -13,92 +13,57 @@ class Client extends EventEmitter {
     this.setMaxListeners(0)
   }
 
-  calculatePaketLength = (data: Buffer) => {
-    let packet = {
-      length: 0,
-      value: data[1]
-    }
-
-    if (data[1] > 127) {
-
-      packet.length = 1
-      packet.value = (data[1] * 256) + data[2]
-
-      if (data[1] > 127 && data[2] > 127) {
-
-        packet.length = 2
-        packet.value = (data[1] * 256 * 256) + (data[2] * 256) + data[3]
-
-        if (data[1] > 127 && data[2] > 127 && data[3] > 127) {
-
-          packet.length = 3
-          packet.value = (data[1] * 256 * 256 * 256) + (data[2] * 256 * 256) + (data[3] * 256) + data[4]
-
-        }
-      }
-    }
-
-    return packet
+  sendResponse = (client: Socket, data: any) => {
+    client.write(data)
   }
 
   operations = (client: Socket, data: Buffer) => {
 
-    const packet = this.calculatePaketLength(data)
-    console.log(commands[data[0]])
-    switch (commands[data[0]]) {
+    const packet_generator = mqtt_packet.parser({ protocolVersion: 4 })
 
-      //Connection Packet Control
-      case command_names.connect:
+    packet_generator.on("packet", (packet: any) => {
+      //console.log(packet)
 
-        if (data.slice(4, 8).toString() !== "MQTT") {
-          return this.protocolError(client)
-        }
-        //Send Connack Packet
-        client.write(Buffer.from(responses.connack))
-        break
+      switch (packet.cmd) {
 
+        case command_names.connect:
+          this.sendResponse(client, Buffer.from(responses.connack))
+          break
 
-      //Subscribe Data Control
-      case command_names.subscribe:
-        const subscribe_event_length = (data[packet.length + 4] * 256) + data[packet.length + 5]
-        const subscribe_event = data.slice(packet.length + 6, packet.length + subscribe_event_length + 6)
-        //TODO: listener eklenecek
-        this.addListener(subscribe_event.toString(), function (data) {
-          console.log('First subscriber: ' + data)
-          client.write(data)
-        })
-        //Send Datas to Clients
-        client.write(Buffer.from(responses.suback))
-        break
+        case command_names.subscribe:
+          this.addListener(packet.subscriptions[0].topic, function (data) {
+            client.write(data)
+          })
+          this.sendResponse(client, Buffer.from(responses.suback))
+          break
 
+        case command_names.publish:
+          this.emit(packet.topic, mqtt_packet.generate(packet))
+          break
 
-      //Publish Packet Control
-      case command_names.publish:
-        const sub_event_length = (data[packet.length + 2] * 256) + data[packet.length + 3]
-        const sub_event = data.slice(packet.length + 4, packet.length + sub_event_length + 4)
-        const publish_data = data.slice(packet.length + 4 + Number(sub_event), data.length)
-        //Send Data
-        this.emit(sub_event.toString(), publish_data)
-        break
+        //Pingreq Packet Control
+        case command_names.pingreq:
+          //Send Pingresp Packet
+          this.sendResponse(client, Buffer.from(responses.pingresp))
+          break
 
+        //Disconnect Packet Control
+        case command_names.disconnect:
+          //Kill Client
+          client.destroy()
+          break
 
-      //Pingreq Packet Control
-      case command_names.pingreq:
-        //Send Pingresp Packet
-        client.write(Buffer.from(responses.pingresp))
-        break
+        default:
+          this.protocolError(client)
+          break
+      }
+    })
 
-      //Disconnect Packet Control
-      case command_names.disconnect:
-        //Kill Client
-        client.destroy()
-        break
+    packet_generator.on("error", (error) => {
+      console.log(error, "packet hatası")
+    })
 
-      default:
-        client.write("MQTT Protocol Error !\r\n")
-        client.destroy()
-        break;
-    }
+    packet_generator.parse(data)
 
   }
 
@@ -109,8 +74,7 @@ class Client extends EventEmitter {
     })
 
     client.on('error', (_err: Error) => {
-      this.removeAllListeners()
-      //console.log(this.listenerCount("sefa"))
+      //this.removeAllListeners()
       //console.log("err !", err)
     })
 
@@ -127,4 +91,3 @@ class Client extends EventEmitter {
 const server = net.createServer(new Client().serverHandler)
 
 server.listen(5000, () => console.log("Server Running !"))
-

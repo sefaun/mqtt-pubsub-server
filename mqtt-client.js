@@ -5,9 +5,7 @@ var client = mqtt_1.connect({ host: "localhost", port: 5000 });
 client.on("connect", function (packet) {
     console.log("bağlandı");
     client.subscribe("sefa");
-    setTimeout(() => {
-        client.publish("sefa", "veri");
-    }, 1500);
+    client.publish("sefa", "veri");
 });
 
 client.on("message", (topic, payload) => {
