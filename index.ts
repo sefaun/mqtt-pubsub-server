@@ -5,6 +5,7 @@ import mqtt_packet from "mqtt-packet"
 import { command_names } from "./protocol/command_names"
 import { responses } from "./protocol/responses"
 
+var clients: number = 0
 
 class Client extends EventEmitter {
 
@@ -13,7 +14,7 @@ class Client extends EventEmitter {
     this.setMaxListeners(0)
   }
 
-  sendResponse = (client: Socket, data: any) => {
+  sendResponse = (client: Socket, data: Buffer) => {
     client.write(data)
   }
 
@@ -22,7 +23,6 @@ class Client extends EventEmitter {
     const packet_generator = mqtt_packet.parser({ protocolVersion: 4 })
 
     packet_generator.on("packet", (packet: any) => {
-      //console.log(packet)
 
       switch (packet.cmd) {
 
@@ -60,6 +60,7 @@ class Client extends EventEmitter {
     })
 
     packet_generator.on("error", (error) => {
+      this.protocolError(client)
       console.log(error, "packet hatası")
     })
 
@@ -67,7 +68,7 @@ class Client extends EventEmitter {
 
   }
 
-  serverHandler = (client: Socket) => {
+  newClient = (client: Socket, that: any) => {
 
     client.on("data", (data: Buffer) => {
       this.operations(client, data)
@@ -80,6 +81,10 @@ class Client extends EventEmitter {
 
   }
 
+  BrokerDataLogger = (data: object) => {
+    this.emit("broker-data", data);
+  }
+
   protocolError = (client: Socket) => {
     client.write("MQTT Protocol Error !\r\n")
     return client.destroy()
@@ -87,7 +92,34 @@ class Client extends EventEmitter {
 
 }
 
+type Commands = {
+  [key: string]: {
+    subscription: Array<string>
+  }
+}
 
-const server = net.createServer(new Client().serverHandler)
+export class SefaBroker extends Client {
+
+  events: Commands = {}
+  client_no: number
+
+  constructor() {
+    super()
+  }
+
+  serverHandler = (client: Socket) => {
+    clients++
+
+    var that = {} as any
+    that.events = this.events[clients] = { subscription: [] }
+    that.client_no = clients
+
+    this.newClient(client, that)
+
+  }
+
+}
+
+const server = net.createServer(new SefaBroker().serverHandler)
 
 server.listen(5000, () => console.log("Server Running !"))

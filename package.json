@@ -2,10 +2,12 @@
   "name": "mqtt-broker",
   "version": "1.0.0",
   "description": "",
-  "main": "test.js",
+  "main": "index.js",
   "scripts": {
-    "start": "nodemon --watch \"./**\"  --ext \"ts,json\" --exec \"ts-node index.ts\""
+    "start": "nodemon --watch \"./**\"  --ext \"ts,json\" --exec \"ts-node index.ts\"",
+    "build": "tsc"
   },
+  "type": "commonjs",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/mqtt-tools/mqtt-broker.git"
