@@ -5,13 +5,21 @@ import mqtt_packet from "mqtt-packet"
 import { command_names } from "./protocol/command_names"
 import { responses } from "./protocol/responses"
 
+
 var clients: number = 0
 
-class Client extends EventEmitter {
+class Client {
 
-  constructor() {
-    super()
-    this.setMaxListeners(0)
+  user_auth: boolean
+  data_counter: number
+  sub_events: string[]
+  broker: EventEmitter
+
+  constructor(that: EventEmitter) {
+    this.broker = that as any
+    this.user_auth = false
+    this.data_counter = 0
+    this.sub_events = []
   }
 
   sendResponse = (client: Socket, data: Buffer) => {
@@ -27,18 +35,25 @@ class Client extends EventEmitter {
       switch (packet.cmd) {
 
         case command_names.connect:
+          this.user_auth = true
           this.sendResponse(client, Buffer.from(responses.connack))
           break
 
         case command_names.subscribe:
-          this.addListener(packet.subscriptions[0].topic, function (data) {
+          this.sub_events.push(packet.subscriptions[0].topic)
+
+          this.broker.addListener(packet.subscriptions[0].topic, function (data) {
             client.write(data)
           })
           this.sendResponse(client, Buffer.from(responses.suback))
+
+          this.BrokerSubscribeLogger(packet)
           break
 
         case command_names.publish:
-          this.emit(packet.topic, mqtt_packet.generate(packet))
+          const publish_data = mqtt_packet.generate(packet)
+          this.broker.emit(packet.topic, publish_data)
+          this.BrokerPublishLogger(publish_data)
           break
 
         //Pingreq Packet Control
@@ -68,21 +83,31 @@ class Client extends EventEmitter {
 
   }
 
-  newClient = (client: Socket, that: any) => {
+  newClient = (client: Socket) => {
 
     client.on("data", (data: Buffer) => {
-      this.operations(client, data)
+      this.data_counter++
+
+      if (this.user_auth === false && this.data_counter > 1) {
+        this.protocolError(client)
+      } else {
+        this.operations(client, data)
+      }
+
     })
 
     client.on('error', (_err: Error) => {
-      //this.removeAllListeners()
-      //console.log("err !", err)
+      this.deleteSubEventsFromEmitter()
     })
 
   }
 
-  BrokerDataLogger = (data: object) => {
-    this.emit("broker-data", data);
+  BrokerPublishLogger = (data: object) => {
+    this.broker.emit("broker-publish", data);
+  }
+
+  BrokerSubscribeLogger = (data: object) => {
+    this.broker.emit("broker-subscribe", data);
   }
 
   protocolError = (client: Socket) => {
@@ -90,31 +115,31 @@ class Client extends EventEmitter {
     return client.destroy()
   }
 
-}
-
-type Commands = {
-  [key: string]: {
-    subscription: Array<string>
+  deleteSubEventsFromEmitter = () => {
+    console.log(this.sub_events)
+    this.sub_events.forEach(event => {
+      this.broker.removeListener(event, this.noob)
+      console.log(this.broker.listenerCount(event))
+    })
   }
+
+  noob = () => { }
+
 }
 
-export class SefaBroker extends Client {
 
-  events: Commands = {}
-  client_no: number
+export class SefaBroker extends EventEmitter {
 
   constructor() {
     super()
   }
 
   serverHandler = (client: Socket) => {
-    clients++
+    this.setMaxListeners(0)
 
-    var that = {} as any
-    that.events = this.events[clients] = { subscription: [] }
-    that.client_no = clients
+    var that = this
 
-    this.newClient(client, that)
+    new Client(that).newClient(client)
 
   }
 
