@@ -1,8 +1,8 @@
 var net = require("net")
-var { SefaBroker } = require("./build/index.js")
+var { MQTTPubSub } = require("./build/index.js")
 
 
-const broker = new SefaBroker()
+const broker = new MQTTPubSub()
 
 broker.on("broker-publish", (data) => {
   console.log(data, "veri geldi")

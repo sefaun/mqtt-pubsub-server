@@ -6,8 +6,6 @@ import { command_names } from "./protocol/command_names"
 import { responses } from "./protocol/responses"
 
 
-var clients: number = 0
-
 class Client {
 
   user_auth: boolean
@@ -16,17 +14,17 @@ class Client {
   broker: EventEmitter
 
   constructor(that: EventEmitter) {
-    this.broker = that as any
+    this.broker = that
     this.user_auth = false
     this.data_counter = 0
     this.sub_events = []
   }
 
-  sendResponse = (client: Socket, data: Buffer) => {
+  private sendResponse = (client: Socket, data: Buffer) => {
     client.write(data)
   }
 
-  operations = (client: Socket, data: Buffer) => {
+  private operations = (client: Socket, data: Buffer) => {
 
     const packet_generator = mqtt_packet.parser({ protocolVersion: 4 })
 
@@ -42,7 +40,7 @@ class Client {
         case command_names.subscribe:
           this.sub_events.push(packet.subscriptions[0].topic)
 
-          this.broker.addListener(packet.subscriptions[0].topic, function (data) {
+          this.broker.on(packet.subscriptions[0].topic, function (data) {
             client.write(data)
           })
           this.sendResponse(client, Buffer.from(responses.suback))
@@ -76,7 +74,7 @@ class Client {
 
     packet_generator.on("error", (error) => {
       this.protocolError(client)
-      console.log(error, "packet hatası")
+      console.log(error, "packet error")
     })
 
     packet_generator.parse(data)
@@ -102,20 +100,20 @@ class Client {
 
   }
 
-  BrokerPublishLogger = (data: object) => {
+  private BrokerPublishLogger = (data: object) => {
     this.broker.emit("broker-publish", data);
   }
 
-  BrokerSubscribeLogger = (data: object) => {
+  private BrokerSubscribeLogger = (data: object) => {
     this.broker.emit("broker-subscribe", data);
   }
 
-  protocolError = (client: Socket) => {
+  private protocolError = (client: Socket) => {
     client.write("MQTT Protocol Error !\r\n")
     return client.destroy()
   }
 
-  deleteSubEventsFromEmitter = () => {
+  private deleteSubEventsFromEmitter = () => {
     console.log(this.sub_events)
     this.sub_events.forEach(event => {
       this.broker.removeListener(event, this.noob)
@@ -123,12 +121,12 @@ class Client {
     })
   }
 
-  noob = () => { }
+  private noob = () => { }
 
 }
 
 
-export class SefaBroker extends EventEmitter {
+export class MQTTPubSub extends EventEmitter {
 
   constructor() {
     super()
@@ -137,14 +135,12 @@ export class SefaBroker extends EventEmitter {
   serverHandler = (client: Socket) => {
     this.setMaxListeners(0)
 
-    var that = this
-
-    new Client(that).newClient(client)
+    return new Client(this).newClient(client)
 
   }
 
 }
 
-const server = net.createServer(new SefaBroker().serverHandler)
+const server = net.createServer(new MQTTPubSub().serverHandler)
 
 server.listen(5000, () => console.log("Server Running !"))
