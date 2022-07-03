@@ -1,5 +1,5 @@
 {
-  "name": "mqtt-broker",
+  "name": "mqtt-pubsub",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -10,7 +10,7 @@
   "type": "commonjs",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/mqtt-tools/mqtt-broker.git"
+    "url": "git+https://github.com/pubsub-tools/mqtt-pubsub-server.git"
   },
   "keywords": [
     "mqtt",
@@ -19,14 +19,14 @@
     "Pub/Sub"
   ],
   "contributors": [
-    "Erdem UN <erdemun.offical@gmail.com>",
-    "Sefa UN <sefaun6654@hotmail.com>"
+    "Sefa UN <sefaun6654@hotmail.com>",
+    "Erdem UN <erdemun.offical@gmail.com>"
   ],
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/mqtt-tools/mqtt-broker/issues"
+    "url": "https://github.com/pubsub-tools/mqtt-pubsub-server/issues"
   },
-  "homepage": "https://github.com/mqtt-tools/mqtt-broker#readme",
+  "homepage": "https://github.com/pubsub-tools/mqtt-pubsub-server#readme",
   "devDependencies": {
     "@types/node": "^17.0.45",
     "@types/uuid": "^8.3.4",
