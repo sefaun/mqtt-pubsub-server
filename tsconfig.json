@@ -7,7 +7,7 @@
     "sourceMap": true,
     "outDir": "build",
     "resolveJsonModule": true,
-    "declaration": false
+    "declaration": true
   },
   "exclude": [
     "node_modules"
