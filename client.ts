@@ -97,7 +97,7 @@ export class Client {
       this.DeleteSubEventsFromEmitter()
       this.ClientDisconnectLogger()
       this.ClientDestroy()
-    }, this.keep_alive_time * 1000);
+    }, (this.keep_alive_time * 1000) + 5000);
   }
 
   private ClientDestroy = (): void => {

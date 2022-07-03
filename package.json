@@ -1,5 +1,5 @@
 {
-  "name": "mqtt-pubsub",
+  "name": "mqtt-pubsub-server",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",

@@ -1,8 +1,15 @@
-const net = require("net")
+const tls = require("tls")
+const fs = require("fs")
+
 const { MQTTPubSub } = require("./build/index.js")
 
+const ssl = {
+  key: fs.readFileSync('./private-key.pem'),
+  cert: fs.readFileSync('./public-cert.pem')
+}
+
 const broker = new MQTTPubSub()
-const server = net.createServer(broker.serverHandler)
+const server = tls.createServer(ssl, broker.serverHandler)
 
 
 broker.on("new-client", (client, data) => {
