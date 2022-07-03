@@ -1,4 +1,4 @@
-import net, { Socket } from "net"
+import { Socket } from "net"
 import { EventEmitter } from "events"
 import mqtt_packet from "mqtt-packet"
 
@@ -8,24 +8,46 @@ import { responses } from "./protocol/responses"
 
 class Client {
 
+  server_client: Socket
   user_auth: boolean
   data_counter: number
   sub_events: string[]
-  broker: EventEmitter
+  broker: any
 
-  constructor(that: EventEmitter) {
+  constructor(that: EventEmitter, client: Socket) {
     this.broker = that
+    this.server_client = client
     this.user_auth = false
     this.data_counter = 0
     this.sub_events = []
   }
 
-  private sendResponse = (client: Socket, data: Buffer) => {
-    client.write(data)
+  newClient = () => {
+    this.server_client.on("data", (data: Buffer) => {
+      this.data_counter++
+
+      if (this.user_auth === false && this.data_counter > 1) {
+        this.protocolError()
+      } else {
+        this.operations(data)
+      }
+
+    })
+
+    this.server_client.on('error', (_err: Error) => {
+      this.deleteSubEventsFromEmitter()
+    })
   }
 
-  private operations = (client: Socket, data: Buffer) => {
+  private sendResponse = (data: Buffer) => {
+    this.server_client.write(data)
+  }
 
+  private sendEventResponse = (data: Buffer) => {
+    this.server_client.write(data)
+  }
+
+  private operations = (data: Buffer) => {
     const packet_generator = mqtt_packet.parser({ protocolVersion: 4 })
 
     packet_generator.on("packet", (packet: any) => {
@@ -34,16 +56,14 @@ class Client {
 
         case command_names.connect:
           this.user_auth = true
-          this.sendResponse(client, Buffer.from(responses.connack))
+          this.sendResponse(Buffer.from(responses.connack))
           break
 
         case command_names.subscribe:
           this.sub_events.push(packet.subscriptions[0].topic)
 
-          this.broker.on(packet.subscriptions[0].topic, function (data) {
-            client.write(data)
-          })
-          this.sendResponse(client, Buffer.from(responses.suback))
+          this.broker.addListener(packet.subscriptions[0].topic, this.sendEventResponse)
+          this.sendResponse(Buffer.from(responses.suback))
 
           this.BrokerSubscribeLogger(packet)
           break
@@ -57,47 +77,27 @@ class Client {
         //Pingreq Packet Control
         case command_names.pingreq:
           //Send Pingresp Packet
-          this.sendResponse(client, Buffer.from(responses.pingresp))
+          this.sendResponse(Buffer.from(responses.pingresp))
           break
 
         //Disconnect Packet Control
         case command_names.disconnect:
           //Kill Client
-          client.destroy()
+          this.server_client.destroy()
           break
 
         default:
-          this.protocolError(client)
+          this.protocolError()
           break
       }
     })
 
     packet_generator.on("error", (error) => {
-      this.protocolError(client)
+      this.protocolError()
       console.log(error, "packet error")
     })
 
     packet_generator.parse(data)
-
-  }
-
-  newClient = (client: Socket) => {
-
-    client.on("data", (data: Buffer) => {
-      this.data_counter++
-
-      if (this.user_auth === false && this.data_counter > 1) {
-        this.protocolError(client)
-      } else {
-        this.operations(client, data)
-      }
-
-    })
-
-    client.on('error', (_err: Error) => {
-      this.deleteSubEventsFromEmitter()
-    })
-
   }
 
   private BrokerPublishLogger = (data: object) => {
@@ -108,20 +108,19 @@ class Client {
     this.broker.emit("broker-subscribe", data);
   }
 
-  private protocolError = (client: Socket) => {
-    client.write("MQTT Protocol Error !\r\n")
-    return client.destroy()
+  private protocolError = () => {
+    this.server_client.write("MQTT Protocol Error !\r\n")
+    return this.server_client.destroy()
   }
 
   private deleteSubEventsFromEmitter = () => {
-    console.log(this.sub_events)
-    this.sub_events.forEach(event => {
-      this.broker.removeListener(event, this.noob)
-      console.log(this.broker.listenerCount(event))
+    const sub_event_backup = [...this.sub_events]
+
+    sub_event_backup.forEach((event, index) => {
+      this.broker.removeListener(event, this.sendEventResponse)
+      this.sub_events.splice(index, 1)
     })
   }
-
-  private noob = () => { }
 
 }
 
@@ -133,14 +132,9 @@ export class MQTTPubSub extends EventEmitter {
   }
 
   serverHandler = (client: Socket) => {
-    this.setMaxListeners(0)
+    this.setMaxListeners(200)
 
-    return new Client(this).newClient(client)
-
+    return new Client(this, client).newClient()
   }
 
 }
-
-const server = net.createServer(new MQTTPubSub().serverHandler)
-
-server.listen(5000, () => console.log("Server Running !"))
