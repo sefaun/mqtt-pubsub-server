@@ -10,23 +10,23 @@ broker.on("new-client", (client, data) => {
 })
 
 broker.on("broker-publish", (data) => {
-  //console.log(data, "broker-publish")
+  console.log(data, "broker-publish")
 })
 
 broker.on("broker-subscribe", (data) => {
-  //console.log(data, "broker-subscribe")
+  console.log(data, "broker-subscribe")
 })
 
 broker.on("client-disconnect", (client) => {
-  //console.log(client, "client-disconnect")
+  console.log(client, "client-disconnect")
 })
 
 broker.on("client-socket-error", (client, error) => {
-  //console.log(client, error, "client-socket-error")
+  console.log(client, error, "client-socket-error")
 })
 
 broker.on("client-protocol-error", (client, error) => {
-  //console.log(client, error, "client-protocol-error")
+  console.log(client, error, "client-protocol-error")
 })
 
 

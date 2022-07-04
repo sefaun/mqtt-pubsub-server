@@ -12,7 +12,7 @@ export class Client {
   broker: any
   server_client: Socket
   client_id: string
-  user_auth: boolean
+  client_auth: boolean
   data_counter: number
   sub_events: string[]
   keep_alive: ReturnType<typeof setTimeout>
@@ -23,7 +23,7 @@ export class Client {
     this.broker = that
     this.server_client = client
     this.client_id = client_id
-    this.user_auth = false
+    this.client_auth = false
     this.data_counter = 0
     this.sub_events = []
     this.req = req
@@ -33,7 +33,7 @@ export class Client {
     this.server_client.on('data', (data: Buffer) => {
       this.data_counter++
 
-      if (this.user_auth === false && this.data_counter > 1) {
+      if (this.client_auth === false && this.data_counter > 1) {
         this.ProtocolError(new Error(`Client Authorization Error !`))
       } else {
         this.Operations(data)
@@ -57,7 +57,7 @@ export class Client {
 
   //MQTT Protocols
   private ClientConnect = (packet: any): void => {
-    this.user_auth = true
+    this.client_auth = true
     this.SendResponse(Buffer.from(responses.connack))
     this.keep_alive_time = packet.keepalive || 60
     this.ClientKeepAliveController()
