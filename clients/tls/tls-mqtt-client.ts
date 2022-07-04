@@ -5,8 +5,8 @@ const client = mqtt.connect({
   protocol: "mqtts",
   host: "localhost",
   port: 5000,
-  key: fs.readFileSync('../private-key.pem'),
-  cert: fs.readFileSync('../public-cert.pem'),
+  key: fs.readFileSync('../../private-key.pem'),
+  cert: fs.readFileSync('../../public-cert.pem'),
   rejectUnauthorized: false
 })
 

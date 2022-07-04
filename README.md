@@ -40,8 +40,8 @@ broker.on("client-socket-error", (client, error) => {
   console.log(client, error, "client-socket-error")
 })
 
-broker.on("client-error", (client, error) => {
-  console.log(client, error, "client-error")
+broker.on("client-protocol-error", (client, error) => {
+  console.log(client, error, "client-protocol-error")
 })
 
 
@@ -84,8 +84,8 @@ broker.on("client-socket-error", (client, error) => {
   console.log(client, error, "client-socket-error")
 })
 
-broker.on("client-error", (client, error) => {
-  console.log(client, error, "client-error")
+broker.on("client-protocol-error", (client, error) => {
+  console.log(client, error, "client-protocol-error")
 })
 
 

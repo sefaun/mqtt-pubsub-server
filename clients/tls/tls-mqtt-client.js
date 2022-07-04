@@ -7,8 +7,8 @@ var client = mqtt_1.connect({
     protocol: "mqtts",
     host: "localhost",
     port: 5000,
-    key: fs_1.readFileSync('../private-key.pem'),
-    cert: fs_1.readFileSync('../public-cert.pem'),
+    key: fs_1.readFileSync('../../private-key.pem'),
+    cert: fs_1.readFileSync('../../public-cert.pem'),
     rejectUnauthorized: false,
     keepalive: 10
 });

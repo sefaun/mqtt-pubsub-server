@@ -1,4 +1,5 @@
 import { Socket } from "net"
+import { RequestOptions } from "http"
 import EventEmitter from "events"
 import mqtt_packet from "mqtt-packet"
 
@@ -14,20 +15,22 @@ export class Client {
   user_auth: boolean
   data_counter: number
   sub_events: string[]
-  keep_alive: ReturnType<typeof setTimeout>;
-  keep_alive_time: number;
+  keep_alive: ReturnType<typeof setTimeout>
+  keep_alive_time: number
+  req: RequestOptions
 
-  constructor(that: EventEmitter, client: Socket, client_id: string) {
+  constructor(that: EventEmitter, client: Socket, client_id: string, req: RequestOptions) {
     this.broker = that
     this.server_client = client
     this.client_id = client_id
     this.user_auth = false
     this.data_counter = 0
     this.sub_events = []
+    this.req = req
   }
 
   public NewClient = (): void => {
-    this.server_client.on("data", (data: Buffer) => {
+    this.server_client.on('data', (data: Buffer) => {
       this.data_counter++
 
       if (this.user_auth === false && this.data_counter > 1) {
@@ -44,16 +47,16 @@ export class Client {
     })
   }
 
-  private SendResponse = (data: Buffer) => {
+  private SendResponse = (data: Buffer): void => {
     this.server_client.write(data)
   }
 
-  private SendEventResponse = (data: Buffer) => {
+  private SendEventResponse = (data: Buffer): void => {
     this.server_client.write(data)
   }
 
   //MQTT Protocols
-  private ClientConnect = (packet: any) => {
+  private ClientConnect = (packet: any): void => {
     this.user_auth = true
     this.SendResponse(Buffer.from(responses.connack))
     this.keep_alive_time = packet.keepalive || 60
@@ -61,7 +64,7 @@ export class Client {
     this.NewClientLogger(packet)
   }
 
-  private ClientPublish = (packet: any) => {
+  private ClientPublish = (packet: any): void => {
     const publish_data = mqtt_packet.generate(packet)
 
     if (!this.ClientPublishTopicControl(packet.topic)) {
@@ -72,7 +75,7 @@ export class Client {
     }
   }
 
-  private ClientSubscribe = (packet: any) => {
+  private ClientSubscribe = (packet: any): void => {
     this.sub_events.push(packet.subscriptions[0].topic)
 
     this.broker.addListener(packet.subscriptions[0].topic, this.SendEventResponse)
@@ -111,7 +114,7 @@ export class Client {
     return false
   }
 
-  private Operations = (data: Buffer) => {
+  private Operations = (data: Buffer): void => {
     const packet_generator = mqtt_packet.parser({ protocolVersion: 4 })
 
     packet_generator.on("packet", (packet: any) => {
@@ -158,7 +161,7 @@ export class Client {
     packet_generator.parse(data)
   }
 
-  private ProtocolError = (error: Error) => {
+  private ProtocolError = (error: Error): void => {
     this.ClientProtocolErrorLogger(error)
   }
 
@@ -182,16 +185,16 @@ export class Client {
     this.broker.emit("client-socket-error", this.server_client, error)
   }
 
-  private ClientProtocolErrorLogger = (error: Error) => {
+  private ClientProtocolErrorLogger = (error: Error): void => {
     this.broker.emit("client-protocol-error", this.server_client, error)
   }
 
   //Broker Logger
-  private BrokerPublishLogger = (data: object) => {
+  private BrokerPublishLogger = (data: object): void => {
     this.broker.emit("broker-publish", data)
   }
 
-  private BrokerSubscribeLogger = (data: object) => {
+  private BrokerSubscribeLogger = (data: object): void => {
     this.broker.emit("broker-subscribe", data)
   }
 
