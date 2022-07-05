@@ -16,10 +16,10 @@
     "mqtt",
     "broker",
     "iot",
-    "Pub/Sub"
+    "Pub/Sub",
     "TCP",
     "Socket",
-    "TLS"
+    "TLS",
     "WebSocket",
     "WS",
     "WSS"
