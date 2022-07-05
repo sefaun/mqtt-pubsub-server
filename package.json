@@ -17,6 +17,12 @@
     "broker",
     "iot",
     "Pub/Sub"
+    "TCP",
+    "Socket",
+    "TLS"
+    "WebSocket",
+    "WS",
+    "WSS"
   ],
   "contributors": [
     "Sefa UN <sefaun6654@hotmail.com>",
@@ -32,7 +38,8 @@
     "@types/uuid": "^8.3.4",
     "esbuild": "^0.14.47",
     "mqtt": "^4.3.7",
-    "nodemon": "^2.0.16"
+    "nodemon": "^2.0.16",
+    "websocket-stream": "^5.5.2"
   },
   "dependencies": {
     "mqtt-packet": "^7.1.2",

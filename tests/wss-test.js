@@ -1,8 +1,13 @@
-const net = require("net")
-const { MQTTPubSub } = require("./build/index.js")
+const fs = require("fs")
+const ssl = {
+  key: fs.readFileSync('../private-key.pem'),
+  cert: fs.readFileSync('../public-cert.pem')
+}
+const server = require("https").createServer({ ...ssl })
+const { MQTTPubSub } = require("../build/index.js")
 
 const broker = new MQTTPubSub()
-const server = net.createServer(broker.serverHandler)
+require('websocket-stream').createServer({ server }, broker.serverHandler)
 
 
 broker.on("new-client", (client, data) => {
@@ -25,8 +30,8 @@ broker.on("client-socket-error", (client, error) => {
   console.log(client, error, "client-socket-error")
 })
 
-broker.on("client-error", (client, error) => {
-  console.log(client, error, "client-error")
+broker.on("client-protocol-error", (client, error) => {
+  console.log(client, error, "client-protocol-error")
 })
 
 

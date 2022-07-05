@@ -1,11 +1,11 @@
 const tls = require("tls")
 const fs = require("fs")
 
-const { MQTTPubSub } = require("./build/index.js")
+const { MQTTPubSub } = require("../build/index.js")
 
 const ssl = {
-  key: fs.readFileSync('./private-key.pem'),
-  cert: fs.readFileSync('./public-cert.pem')
+  key: fs.readFileSync('../private-key.pem'),
+  cert: fs.readFileSync('../public-cert.pem')
 }
 
 const broker = new MQTTPubSub()
@@ -32,8 +32,8 @@ broker.on("client-socket-error", (client, error) => {
   console.log(client, error, "client-socket-error")
 })
 
-broker.on("client-error", (client, error) => {
-  console.log(client, error, "client-error")
+broker.on("client-protocol-error", (client, error) => {
+  console.log(client, error, "client-protocol-error")
 })
 
 
