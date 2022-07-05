@@ -115,7 +115,6 @@ export class Client {
   }
 
   private MQTTFirstByteControl = (mqtt_command: number): boolean => {
-
     switch (Number(mqtt_command)) {
       case command_first_byte.connect:
         return true
@@ -148,7 +147,6 @@ export class Client {
       default:
         return false
     }
-
   }
 
   private SendResponse = (data: Buffer): void => {
@@ -276,7 +274,7 @@ export class Client {
     this.sub_events = []
   }
 
-  //Client Logger
+  //Client Loggers
   private NewClientLogger = (data: object): void => {
     this.broker.emit("new-client", this.server_client, data)
   }
@@ -293,7 +291,7 @@ export class Client {
     this.broker.emit("client-protocol-error", this.server_client, error)
   }
 
-  //Broker Logger
+  //Broker Loggers
   private BrokerPublishLogger = (data: object): void => {
     this.broker.emit("broker-publish", data)
   }
