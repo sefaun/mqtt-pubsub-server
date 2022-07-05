@@ -61,7 +61,8 @@ export class Client {
     if (this.telemetry.length === 2 || this.telemetry.length === 4 || this.telemetry.length >= 5) {
       //First Byte Control
       if (!this.MQTTFirstByteControl(Number(this.telemetry[0]))) {
-        this.ClientDestroy()
+        this.ProtocolError(new Error('Invalid MQTT Packet !'))
+        return this.ClientDestroy()
       }
 
       this.telemetry_length_value = this.MQTTPacketLengthControl(this.telemetry)
@@ -77,7 +78,7 @@ export class Client {
 
         if (!this.client_auth && this.data_counter > 1) {
           this.ProtocolError(new Error('Client Authorization Error !'))
-          this.ClientDestroy()
+          return this.ClientDestroy()
         } else {
           this.Operations(packet)
           return this.DataFetcher()
@@ -87,7 +88,7 @@ export class Client {
 
         if (!this.client_auth && this.data_counter > 1) {
           this.ProtocolError(new Error('Client Authorization Error !'))
-          this.ClientDestroy()
+          return this.ClientDestroy()
         } else {
           this.Operations(this.telemetry)
         }
