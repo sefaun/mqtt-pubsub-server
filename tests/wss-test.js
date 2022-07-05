@@ -1,8 +1,13 @@
-const net = require("net")
+const fs = require("fs")
+const ssl = {
+  key: fs.readFileSync('../private-key.pem'),
+  cert: fs.readFileSync('../public-cert.pem')
+}
+const server = require("https").createServer({ ...ssl })
 const { MQTTPubSub } = require("../build/index.js")
 
 const broker = new MQTTPubSub()
-const server = net.createServer(broker.serverHandler)
+require('websocket-stream').createServer({ server }, broker.serverHandler)
 
 
 broker.on("new-client", (client, data) => {

@@ -17,6 +17,12 @@
     "broker",
     "iot",
     "Pub/Sub"
+    "TCP",
+    "Socket",
+    "TLS"
+    "WebSocket",
+    "WS",
+    "WSS"
   ],
   "contributors": [
     "Sefa UN <sefaun6654@hotmail.com>",

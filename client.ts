@@ -3,7 +3,7 @@ import { RequestOptions } from "http"
 import EventEmitter from "events"
 import mqtt_packet from "mqtt-packet"
 
-import { command_names } from "./protocol/command_names"
+import { command_first_byte, command_names } from "./protocol/command_names"
 import { responses } from "./protocol/responses"
 
 
@@ -13,38 +13,142 @@ export class Client {
   server_client: Socket
   client_id: string
   client_auth: boolean
-  data_counter: number
   sub_events: string[]
   keep_alive: ReturnType<typeof setTimeout>
   keep_alive_time: number
   req: RequestOptions
+  telemetry: Buffer
+  telemetry_length: number
+  telemetry_length_value: number
+  telemetry_backup: Buffer
+  data_counter: number
 
   constructor(that: EventEmitter, client: Socket, client_id: string, req: RequestOptions) {
     this.broker = that
     this.server_client = client
     this.client_id = client_id
     this.client_auth = false
-    this.data_counter = 0
     this.sub_events = []
     this.req = req
+    this.telemetry = null
+    this.telemetry_length = 0
+    this.telemetry_length_value = 0
+    this.telemetry_backup = null
+    this.data_counter = 0
   }
 
   public NewClient = (): void => {
     this.server_client.on('data', (data: Buffer) => {
-      this.data_counter++
 
-      if (this.client_auth === false && this.data_counter > 1) {
-        this.ProtocolError(new Error(`Client Authorization Error !`))
+      if (!this.telemetry) {
+        this.telemetry = data
+        this.telemetry_length = this.telemetry.length
       } else {
-        this.Operations(data)
+        this.telemetry = Buffer.concat([this.telemetry, data])
+        this.telemetry_length = this.telemetry.length
       }
 
+      return this.DataFetcher()
     })
 
     this.server_client.on('error', (error: Error) => {
       this.DeleteSubEventsFromEmitter()
       this.ClientSocketErrorLogger(error)
     })
+  }
+
+  private DataFetcher = () => {
+    if (this.telemetry.length === 2 || this.telemetry.length === 4 || this.telemetry.length >= 5) {
+      //First Byte Control
+      if (!this.MQTTFirstByteControl(Number(this.telemetry[0]))) {
+        this.ClientDestroy()
+      }
+
+      this.telemetry_length_value = this.MQTTPacketLengthControl(this.telemetry)
+
+      if (this.telemetry_length > this.telemetry_length_value) {
+        this.data_counter++
+
+        const packet = this.telemetry.slice(0, this.telemetry_length_value)
+        this.telemetry_backup = this.telemetry.slice(this.telemetry_length_value, this.telemetry_length)
+
+        this.telemetry = this.telemetry_backup
+        this.telemetry_length = this.telemetry.length
+
+        if (!this.client_auth && this.data_counter > 1) {
+          this.ProtocolError(new Error('Client Authorization Error !'))
+          this.ClientDestroy()
+        } else {
+          this.Operations(packet)
+          return this.DataFetcher()
+        }
+      } else if (this.telemetry_length === this.telemetry_length_value) {
+        this.data_counter++
+
+        if (!this.client_auth && this.data_counter > 1) {
+          this.ProtocolError(new Error('Client Authorization Error !'))
+          this.ClientDestroy()
+        } else {
+          this.Operations(this.telemetry)
+        }
+        this.telemetry = null
+        this.telemetry_backup = null
+        this.telemetry_length = 0
+      }
+    }
+  }
+
+  private MQTTPacketLengthControl = (data: Buffer): number => {
+    let packet_length = Number(data[1])
+
+    if (data[1] > 127) {
+      packet_length = Number((data[1] * 256) + data[2])
+      if (data[1] > 127 && data[2] > 127) {
+        packet_length = Number((data[1] * 256 * 256) + (data[2] * 256) + data[3])
+        if (data[1] > 127 && data[2] > 127 && data[3] > 127) {
+          packet_length = Number((data[1] * 256 * 256 * 256) + (data[2] * 256 * 256) + (data[3] * 256) + data[4])
+        }
+      }
+    }
+
+    return packet_length + 2
+  }
+
+  private MQTTFirstByteControl = (mqtt_command: number): boolean => {
+
+    switch (Number(mqtt_command)) {
+      case command_first_byte.connect:
+        return true
+      case command_first_byte.connack:
+        return true
+      case command_first_byte.publish:
+        return true
+      case command_first_byte.puback:
+        return true
+      case command_first_byte.pubrec:
+        return true
+      case command_first_byte.pubrel:
+        return true
+      case command_first_byte.pubcomp:
+        return true
+      case command_first_byte.subscribe:
+        return true
+      case command_first_byte.suback:
+        return true
+      case command_first_byte.unsubscribe:
+        return true
+      case command_first_byte.unsuback:
+        return true
+      case command_first_byte.pingreq:
+        return true
+      case command_first_byte.pingresp:
+        return true
+      case command_first_byte.disconnect:
+        return true
+      default:
+        return false
+    }
+
   }
 
   private SendResponse = (data: Buffer): void => {
