@@ -5,7 +5,9 @@
   "main": "index.js",
   "scripts": {
     "start": "nodemon --watch \"./**\"  --ext \"ts,json\" --exec \"ts-node index.ts\"",
-    "build": "tsc"
+    "build": "tsc",
+    "del:win": "rmdir /s /q build",
+    "del:linux": "rm -rf build"
   },
   "type": "commonjs",
   "repository": {

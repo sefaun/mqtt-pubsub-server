@@ -208,6 +208,7 @@ export class Client {
 
   private ClientDestroy = (): void => {
     this.server_client.destroy()
+    this.broker.deleteClientClass(this.client_id)
   }
 
   private ClientPublishTopicControl = (data: string): boolean => {
@@ -251,8 +252,8 @@ export class Client {
 
         default:
           this.ProtocolError(new Error('Unknown Protocol'))
-          this.ClientDestroy()
           this.ClientDisconnectLogger()
+          this.ClientDestroy()
           break
       }
     })
@@ -286,6 +287,7 @@ export class Client {
 
   private ClientSocketErrorLogger = (error: Error): void => {
     this.broker.emit("client-socket-error", this.server_client, error)
+    this.broker.deleteClientClass(this.client_id)
   }
 
   private ClientProtocolErrorLogger = (error: Error): void => {

@@ -18,9 +18,16 @@ export class MQTTPubSub extends EventEmitter {
     this.setMaxListeners(200)
 
     const client_id = uuidv4()
-    this.clients[client_id] = {}
 
-    return new Client(this, client, client_id, req).NewClient()
+    const client_class = new Client(this, client, client_id, req)
+    client_class.NewClient()
+
+    this.clients[client_id] = client_class
+    console.log(this.clients)
+  }
+
+  deleteClientClass = (client_id: string) => {
+    delete this.clients[client_id]
   }
 
 }
