@@ -23,7 +23,6 @@ export class MQTTPubSub extends EventEmitter {
     client_class.NewClient()
 
     this.clients[client_id] = client_class
-    console.log(this.clients)
   }
 
   deleteClientClass = (client_id: string) => {
