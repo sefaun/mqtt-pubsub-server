@@ -1,8 +1,8 @@
 {
-  "name": "mqtt-pubsub-server",
+  "name": "mqtt-broker",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "build/index.js",
   "scripts": {
     "start": "nodemon --watch \"./**\"  --ext \"ts,json\" --exec \"ts-node index.ts\"",
     "build": "tsc",
@@ -12,7 +12,7 @@
   "type": "commonjs",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/pubsub-tools/mqtt-pubsub-server.git"
+    "url": "git+https://github.com/pubsub-tools/mqtt-broker.git"
   },
   "keywords": [
     "mqtt",
@@ -32,9 +32,9 @@
   ],
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/pubsub-tools/mqtt-pubsub-server/issues"
+    "url": "https://github.com/pubsub-tools/mqtt-broker/issues"
   },
-  "homepage": "https://github.com/pubsub-tools/mqtt-pubsub-server#readme",
+  "homepage": "https://github.com/pubsub-tools/mqtt-broker#readme",
   "devDependencies": {
     "@types/node": "^17.0.45",
     "@types/uuid": "^8.3.4",

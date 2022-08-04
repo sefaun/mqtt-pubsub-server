@@ -1,0 +1,40 @@
+/// <reference types="node" />
+import { Socket } from "net";
+import EventEmitter from "events";
+import { RequestOptions } from "http";
+import { Qlobber } from "./Qlobber";
+export declare class Client {
+    broker: any;
+    server_client: Socket;
+    client_id: string;
+    client_auth: boolean;
+    sub_events: string[];
+    keep_alive: ReturnType<typeof setTimeout>;
+    keep_alive_time: number;
+    req: RequestOptions;
+    telemetry: Buffer;
+    telemetry_length: number;
+    telemetry_length_value: number;
+    telemetry_backup: Buffer;
+    data_counter: number;
+    qlobber: Qlobber;
+    constructor(that: EventEmitter, client: Socket, client_id: string, req: RequestOptions);
+    NewClient: () => void;
+    private DataFetcher;
+    private MQTTPacketLengthControl;
+    private MQTTFirstByteControl;
+    private SendResponse;
+    private SendEventResponse;
+    private ClientConnect;
+    private ClientPublish;
+    private ClientSubscribe;
+    private ClientPingreq;
+    private ClientKeepAliveController;
+    private ClientPublishTopicControl;
+    private Operations;
+    private DeleteSubEventsFromEmitter;
+    private AllErrors;
+    private NewClientLogger;
+    private BrokerPublishLogger;
+    private BrokerSubscribeLogger;
+}

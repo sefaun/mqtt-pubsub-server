@@ -1,0 +1,32 @@
+export declare const command_names: {
+    connect: string;
+    connack: string;
+    publish: string;
+    puback: string;
+    pubrec: string;
+    pubrel: string;
+    pubcomp: string;
+    subscribe: string;
+    suback: string;
+    unsubscribe: string;
+    unsuback: string;
+    pingreq: string;
+    pingresp: string;
+    disconnect: string;
+};
+export declare const command_first_byte: {
+    connect: number;
+    connack: number;
+    publish: number;
+    puback: number;
+    pubrec: number;
+    pubrel: number;
+    pubcomp: number;
+    subscribe: number;
+    suback: number;
+    unsubscribe: number;
+    unsuback: number;
+    pingreq: number;
+    pingresp: number;
+    disconnect: number;
+};

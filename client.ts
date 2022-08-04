@@ -1,10 +1,11 @@
 import { Socket } from "net"
-import { RequestOptions } from "http"
 import EventEmitter from "events"
+import { RequestOptions } from "http"
 import mqtt_packet from "mqtt-packet"
 
-import { command_first_byte, command_names } from "./protocol/command_names"
+import { Qlobber } from "./Qlobber"
 import { responses } from "./protocol/responses"
+import { command_first_byte, command_names } from "./protocol/command_names"
 
 
 export class Client {
@@ -22,6 +23,7 @@ export class Client {
   telemetry_length_value: number
   telemetry_backup: Buffer
   data_counter: number
+  qlobber: Qlobber
 
   constructor(that: EventEmitter, client: Socket, client_id: string, req: RequestOptions) {
     this.broker = that
@@ -35,6 +37,8 @@ export class Client {
     this.telemetry_length_value = 0
     this.telemetry_backup = null
     this.data_counter = 0
+
+    this.qlobber = new Qlobber("/")
   }
 
   public NewClient = (): void => {
@@ -52,8 +56,7 @@ export class Client {
     })
 
     this.server_client.on('error', (error: Error) => {
-      this.DeleteSubEventsFromEmitter()
-      this.ClientSocketErrorLogger(error)
+      this.AllErrors({ error: true }, error)
     })
   }
 
@@ -61,8 +64,8 @@ export class Client {
     if (this.telemetry.length === 2 || this.telemetry.length === 4 || this.telemetry.length >= 5) {
       //First Byte Control
       if (!this.MQTTFirstByteControl(Number(this.telemetry[0]))) {
-        this.ProtocolError(new Error('Invalid MQTT Packet !'))
-        return this.ClientDestroy()
+        this.AllErrors({ protocol: true }, new Error('Invalid MQTT Packet !'))
+        return
       }
 
       this.telemetry_length_value = this.MQTTPacketLengthControl(this.telemetry)
@@ -77,8 +80,8 @@ export class Client {
         this.telemetry_length = this.telemetry.length
 
         if (!this.client_auth && this.data_counter > 1) {
-          this.ProtocolError(new Error('Client Authorization Error !'))
-          return this.ClientDestroy()
+          this.AllErrors({ protocol: true }, new Error('Client Authorization Error !'))
+          return
         } else {
           this.Operations(packet)
           return this.DataFetcher()
@@ -87,8 +90,8 @@ export class Client {
         this.data_counter++
 
         if (!this.client_auth && this.data_counter > 1) {
-          this.ProtocolError(new Error('Client Authorization Error !'))
-          return this.ClientDestroy()
+          this.AllErrors({ protocol: true }, new Error('Client Authorization Error !'))
+          return
         } else {
           this.Operations(this.telemetry)
         }
@@ -174,7 +177,7 @@ export class Client {
       this.broker.emit(packet.topic, publish_data)
       this.BrokerPublishLogger(publish_data)
     } else {
-      this.ProtocolError(new Error(`Invalid Topic: ${packet.topic}`))
+      this.AllErrors({ protocol: true }, new Error(`Invalid Topic: ${packet.topic}`))
     }
   }
 
@@ -192,23 +195,11 @@ export class Client {
     this.ClientKeepAliveController()
   }
 
-  private ClientDisconnect = (): void => {
-    this.ClientDestroy()
-    this.ClientDisconnectLogger()
-  }
-
   private ClientKeepAliveController = (): void => {
     clearTimeout(this.keep_alive)
     this.keep_alive = setTimeout(() => {
-      this.DeleteSubEventsFromEmitter()
-      this.ClientDisconnectLogger()
-      this.ClientDestroy()
+      this.AllErrors({ client: true }, new Error('Client Timeout'))
     }, (this.keep_alive_time * 1000) + 5000);
-  }
-
-  private ClientDestroy = (): void => {
-    this.server_client.destroy()
-    this.broker.deleteClientClass(this.client_id)
   }
 
   private ClientPublishTopicControl = (data: string): boolean => {
@@ -247,26 +238,20 @@ export class Client {
 
         //Disconnect Packet Control
         case command_names.disconnect:
-          this.ClientDisconnect()
+          this.AllErrors({ disconnect: true })
           break
 
         default:
-          this.ProtocolError(new Error('Unknown Protocol'))
-          this.ClientDisconnectLogger()
-          this.ClientDestroy()
+          this.AllErrors({ protocol: true }, new Error('Unknown Protocol'))
           break
       }
     })
 
     packet_generator.on("error", (error) => {
-      this.ProtocolError(error)
+      this.AllErrors({ protocol: true }, error)
     })
 
     packet_generator.parse(data)
-  }
-
-  private ProtocolError = (error: Error): void => {
-    this.ClientProtocolErrorLogger(error)
   }
 
   private DeleteSubEventsFromEmitter = (): void => {
@@ -276,31 +261,27 @@ export class Client {
     this.sub_events = []
   }
 
+  private AllErrors = (data: { client?: boolean, disconnect?: boolean, protocol?: boolean, error?: boolean }, error?: Error) => {
+    clearTimeout(this.keep_alive)
+    this.server_client.destroy()
+    this.DeleteSubEventsFromEmitter()
+    this.broker.deleteClientClass(this.client_id)
+
+    this.broker.emit("client-errors", this.server_client, data, error)
+  }
+
   //Client Loggers
   private NewClientLogger = (data: object): void => {
     this.broker.emit("new-client", this.server_client, data)
   }
 
-  private ClientDisconnectLogger = (): void => {
-    this.broker.emit("client-disconnect", this.server_client)
-  }
-
-  private ClientSocketErrorLogger = (error: Error): void => {
-    this.broker.emit("client-socket-error", this.server_client, error)
-    this.broker.deleteClientClass(this.client_id)
-  }
-
-  private ClientProtocolErrorLogger = (error: Error): void => {
-    this.broker.emit("client-protocol-error", this.server_client, error)
-  }
-
   //Broker Loggers
   private BrokerPublishLogger = (data: object): void => {
-    this.broker.emit("broker-publish", data)
+    this.broker.emit("client-publish", data)
   }
 
   private BrokerSubscribeLogger = (data: object): void => {
-    this.broker.emit("broker-subscribe", data)
+    this.broker.emit("client-subscribe", data)
   }
 
 }
