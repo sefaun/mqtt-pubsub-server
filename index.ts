@@ -1,17 +1,23 @@
 import { Socket } from "net"
+import { v4 as uuidv4 } from "uuid"
 import { RequestOptions } from "http"
 import { EventEmitter } from "events"
-import { v4 as uuidv4 } from "uuid"
 
 import { Client } from "./client"
+import { Qlobber, QlobSignals } from "./Qlobber"
 
 
 export class MQTTPubSub extends EventEmitter {
 
   clients: object = {}
+  seperator: QlobSignals
+  qlobber: Qlobber
 
   constructor() {
     super()
+
+    this.seperator = "/"
+    this.qlobber = new Qlobber(this.seperator)
   }
 
   serverHandler = (client: Socket, req: RequestOptions) => {

@@ -5,7 +5,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Client = void 0;
 const mqtt_packet_1 = __importDefault(require("mqtt-packet"));
-const Qlobber_1 = require("./Qlobber");
 const responses_1 = require("./protocol/responses");
 const command_names_1 = require("./protocol/command_names");
 class Client {
@@ -128,7 +127,18 @@ class Client {
         this.ClientPublish = (packet) => {
             const publish_data = mqtt_packet_1.default.generate(packet);
             if (!this.ClientPublishTopicControl(packet.topic)) {
+                const topic_control = packet.topic.split(this.broker.seperator);
                 this.broker.emit(packet.topic, publish_data);
+                if (topic_control.length > 1) {
+                    let sub_topic = "";
+                    topic_control.forEach((item, index) => {
+                        if (item !== "" && topic_control.length - 1 !== index) {
+                            sub_topic += `${item}/`;
+                            this.broker.emit(`${sub_topic}#`, publish_data);
+                            this.broker.emit(`${sub_topic}+`, publish_data);
+                        }
+                    });
+                }
                 this.BrokerPublishLogger(publish_data);
             }
             else {
@@ -136,8 +146,10 @@ class Client {
             }
         };
         this.ClientSubscribe = (packet) => {
-            this.sub_events.push(packet.subscriptions[0].topic);
-            this.broker.addListener(packet.subscriptions[0].topic, this.SendEventResponse);
+            packet.subscriptions.forEach((topic_name) => {
+                this.sub_events.push(topic_name.topic);
+                this.broker.addListener(topic_name.topic, this.SendEventResponse);
+            });
             this.SendResponse(Buffer.from(responses_1.responses.suback));
             this.BrokerSubscribeLogger(packet);
         };
@@ -226,7 +238,6 @@ class Client {
         this.telemetry_length_value = 0;
         this.telemetry_backup = null;
         this.data_counter = 0;
-        this.qlobber = new Qlobber_1.Qlobber("/");
     }
 }
 exports.Client = Client;

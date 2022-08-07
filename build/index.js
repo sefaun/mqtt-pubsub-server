@@ -1,9 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MQTTPubSub = void 0;
-const events_1 = require("events");
 const uuid_1 = require("uuid");
+const events_1 = require("events");
 const client_1 = require("./client");
+const Qlobber_1 = require("./Qlobber");
 class MQTTPubSub extends events_1.EventEmitter {
     constructor() {
         super();
@@ -18,6 +19,8 @@ class MQTTPubSub extends events_1.EventEmitter {
         this.deleteClientClass = (client_id) => {
             delete this.clients[client_id];
         };
+        this.seperator = "/";
+        this.qlobber = new Qlobber_1.Qlobber(this.seperator);
     }
 }
 exports.MQTTPubSub = MQTTPubSub;

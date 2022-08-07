@@ -3,7 +3,7 @@ import EventEmitter from "events"
 import { RequestOptions } from "http"
 import mqtt_packet from "mqtt-packet"
 
-import { Qlobber } from "./Qlobber"
+import { Qlobber, QlobSignals } from "./Qlobber"
 import { responses } from "./protocol/responses"
 import { command_first_byte, command_names } from "./protocol/command_names"
 
@@ -37,8 +37,6 @@ export class Client {
     this.telemetry_length_value = 0
     this.telemetry_backup = null
     this.data_counter = 0
-
-    this.qlobber = new Qlobber("/")
   }
 
   public NewClient = (): void => {
@@ -174,17 +172,33 @@ export class Client {
     const publish_data = mqtt_packet.generate(packet)
 
     if (!this.ClientPublishTopicControl(packet.topic)) {
+
+      const topic_control = packet.topic.split(this.broker.seperator) as string[]
       this.broker.emit(packet.topic, publish_data)
+
+      if (topic_control.length > 1) {
+        let sub_topic: string = ""
+        topic_control.forEach((item: string, index: number) => {
+          if (item !== "" && topic_control.length - 1 !== index) {
+            sub_topic += `${item}/`
+            this.broker.emit(`${sub_topic}#`, publish_data)
+            this.broker.emit(`${sub_topic}+`, publish_data)
+          }
+        });
+      }
+
       this.BrokerPublishLogger(publish_data)
     } else {
       this.AllErrors({ protocol: true }, new Error(`Invalid Topic: ${packet.topic}`))
     }
   }
 
-  private ClientSubscribe = (packet: any): void => {
-    this.sub_events.push(packet.subscriptions[0].topic)
+  private ClientSubscribe = (packet): void => {
+    packet.subscriptions.forEach((topic_name: { topic: string, qos: number }) => {
+      this.sub_events.push(topic_name.topic)
+      this.broker.addListener(topic_name.topic, this.SendEventResponse)
+    });
 
-    this.broker.addListener(packet.subscriptions[0].topic, this.SendEventResponse)
     this.SendResponse(Buffer.from(responses.suback))
 
     this.BrokerSubscribeLogger(packet)

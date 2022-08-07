@@ -1,4 +1,4 @@
-type QlobSignals = "." | "/" | ":" | "*"
+export type QlobSignals = "." | "/" | ":" | "*"
 
 
 export class Qlobber {

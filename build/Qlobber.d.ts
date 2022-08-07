@@ -1,4 +1,4 @@
-declare type QlobSignals = "." | "/" | ":" | "*";
+export declare type QlobSignals = "." | "/" | ":" | "*";
 export declare class Qlobber {
     private qlob;
     private subscribe_events;
@@ -7,4 +7,3 @@ export declare class Qlobber {
     removeSubscribeEvent: (data: string) => void;
     getSubscribeEvent: () => string[];
 }
-export {};
